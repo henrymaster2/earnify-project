@@ -1,3 +1,5 @@
+// pages/search.tsx
+
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -5,70 +7,138 @@ interface Job {
   id: number;
   title: string;
   description: string;
-  location: string;
+  createdAt: string;
 }
 
-export default function JobSearch() {
+interface ApplicationStatus {
+  [jobId: number]: boolean;
+}
+
+export default function JobSearchPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [statusMap, setStatusMap] = useState<Record<number, string>>({});
+  const [applicationStatus, setApplicationStatus] = useState<ApplicationStatus>({});
+  const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    resume: null as File | null,
+  });
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    axios.get('/api/jobs/list').then(res => setJobs(res.data.jobs));
+    fetchJobs();
+    fetchApplicationStatus();
   }, []);
 
-  const handleApply = async (jobId: number) => {
-    const resume = prompt('Enter your resume:');
-    if (!resume) return;
-
+  const fetchJobs = async () => {
     try {
-      await axios.post('/api/jobs/apply', { jobId, resume });
-      alert('Application submitted!');
-      fetchStatus(jobId);
+      const res = await axios.get('/api/jobs/list');
+      setJobs(res.data.jobs);
     } catch (err) {
-      alert('You may have already applied or there was an error.');
+      console.error('Error fetching jobs', err);
     }
   };
 
-  const fetchStatus = async (jobId: number) => {
+  const fetchApplicationStatus = async () => {
     try {
-      const res = await axios.get(`/api/jobs/status?jobId=${jobId}`);
-      const status = res.data?.status || 'Pending';
-      setStatusMap(prev => ({ ...prev, [jobId]: status }));
-    } catch {
-      setStatusMap(prev => ({ ...prev, [jobId]: 'Not applied' }));
+      const res = await axios.get('/api/jobs/status');
+      const statusMap: ApplicationStatus = {};
+      res.data.applications.forEach((app: any) => {
+        statusMap[app.jobId] = true;
+      });
+      setApplicationStatus(statusMap);
+    } catch (err) {
+      console.error('Error fetching application status', err);
+    }
+  };
+
+  const handleApplyClick = (jobId: number) => {
+    setSelectedJobId(jobId);
+    setMessage('');
+    setFormData({ name: '', email: '', resume: null });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.resume || selectedJobId === null) {
+      setMessage('Please fill all fields.');
+      return;
+    }
+
+    const form = new FormData();
+    form.append('name', formData.name);
+    form.append('email', formData.email);
+    form.append('resume', formData.resume);
+    form.append('jobId', selectedJobId.toString());
+
+    try {
+      const res = await axios.post('/api/jobs/apply', form);
+      if (res.data.success) {
+        setMessage('Application submitted!');
+        setApplicationStatus((prev) => ({ ...prev, [selectedJobId]: true }));
+        setSelectedJobId(null);
+      } else {
+        setMessage('Failed to apply.');
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage('Error submitting application.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-white p-4">
-      <h1 className="text-3xl font-bold text-center mb-8">Job Listings</h1>
+    <div className="min-h-screen bg-gradient-to-br from-[#0f172a] to-[#1e293b] text-white p-6">
+      <h1 className="text-3xl font-bold text-center mb-6">Available Jobs</h1>
       <div className="max-w-3xl mx-auto space-y-6">
-        {jobs.map(job => (
-          <div key={job.id} className="bg-white/10 rounded-xl p-4 shadow-lg">
+        {jobs.map((job) => (
+          <div key={job.id} className="bg-white/10 backdrop-blur-md rounded-xl p-6 shadow-md">
             <h2 className="text-xl font-semibold">{job.title}</h2>
-            <p className="text-sm mt-1">{job.description}</p>
-            <p className="text-sm italic mt-1 text-gray-300">Location: {job.location}</p>
+            <p className="text-sm mt-2">{job.description}</p>
 
-            <div className="mt-4 space-x-4">
-              {statusMap[job.id] ? (
-                <span className="text-green-400">Status: {statusMap[job.id]}</span>
-              ) : (
-                <>
-                  <button
-                    onClick={() => handleApply(job.id)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
-                  >
-                    Apply
-                  </button>
-                  <button
-                    onClick={() => fetchStatus(job.id)}
-                    className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded"
-                  >
-                    Check Status
-                  </button>
-                </>
-              )}
-            </div>
+            {applicationStatus[job.id] ? (
+              <p className="mt-4 text-green-400">✅ You have applied</p>
+            ) : (
+              <button
+                className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white"
+                onClick={() => handleApplyClick(job.id)}
+              >
+                Apply
+              </button>
+            )}
+
+            {selectedJobId === job.id && (
+              <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+                <input
+                  type="text"
+                  placeholder="Your Name"
+                  className="w-full p-2 rounded bg-white/20 border border-white/30"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+                <input
+                  type="email"
+                  placeholder="Your Email"
+                  className="w-full p-2 rounded bg-white/20 border border-white/30"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  className="w-full"
+                  onChange={(e) =>
+                    setFormData({ ...formData, resume: e.target.files?.[0] || null })
+                  }
+                />
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-white"
+                >
+                  Submit Application
+                </button>
+                {message && <p className="text-sm text-yellow-400">{message}</p>}
+              </form>
+            )}
           </div>
         ))}
       </div>

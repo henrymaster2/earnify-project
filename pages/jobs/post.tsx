@@ -1,139 +1,129 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
 
-export default function PostJobPage() {
-  const router = useRouter();
+export default function PostJob() {
   const [form, setForm] = useState({
     title: '',
     description: '',
     company: '',
     location: '',
+    imageBase64: '',
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setForm((prev) => ({ ...prev, imageBase64: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage('Submitting...');
 
-    if (!form.title || !form.description || !form.company || !form.location) {
-      setError('Please fill in all fields.');
-      return;
-    }
-
-    let imageBase64 = null;
-    if (imageFile) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        imageBase64 = reader.result;
-        await submitToApi(imageBase64 as string);
-      };
-      reader.readAsDataURL(imageFile);
-    } else {
-      await submitToApi(null);
-    }
-  };
-
-  const submitToApi = async (imageBase64: string | null) => {
     try {
-      const response = await fetch('/api/jobs', {
+      const res = await fetch('/api/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, imageBase64 }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(form),
       });
 
-      if (!response.ok) throw new Error('Failed to post job');
+      const data = await res.json();
 
-      router.push('/jobs');
+      if (res.ok) {
+        setMessage('Job posted successfully!');
+        setForm({
+          title: '',
+          description: '',
+          company: '',
+          location: '',
+          imageBase64: '',
+        });
+      } else {
+        setMessage(`Error: ${data.error || 'Failed to post job'}`);
+      }
     } catch (err) {
-      setError('Something went wrong. Try again.');
       console.error(err);
+      setMessage('Something went wrong.');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-xl bg-gray-900 rounded-xl shadow-lg p-8 space-y-5">
-        <h1 className="text-3xl font-bold text-center">Post a Job</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-800 to-blue-900 text-white p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-xl bg-gray-900 p-6 rounded-2xl shadow-lg space-y-4"
+      >
+        <h2 className="text-2xl font-bold mb-2 text-center">Post a Job</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="title"
-            placeholder="Job Title"
-            value={form.title}
-            onChange={handleInputChange}
-            className="w-full p-3 rounded-md bg-gray-800 text-white"
-          />
-          <textarea
-            name="description"
-            placeholder="Job Description"
-            value={form.description}
-            onChange={handleInputChange}
-            className="w-full p-3 rounded-md bg-gray-800 text-white"
-          />
-          <input
-            type="text"
-            name="company"
-            placeholder="Company Name"
-            value={form.company}
-            onChange={handleInputChange}
-            className="w-full p-3 rounded-md bg-gray-800 text-white"
-          />
-          <input
-            type="text"
-            name="location"
-            placeholder="Location"
-            value={form.location}
-            onChange={handleInputChange}
-            className="w-full p-3 rounded-md bg-gray-800 text-white"
-          />
+        <input
+          type="text"
+          name="title"
+          placeholder="Job Title"
+          value={form.title}
+          onChange={handleChange}
+          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+          required
+        />
 
-          <div>
-            <label className="block mb-1 text-sm font-medium">Upload Job Image (optional)</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="text-white"
-            />
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="mt-2 h-32 object-cover rounded-lg"
-              />
-            )}
-          </div>
+        <textarea
+          name="description"
+          placeholder="Job Description"
+          value={form.description}
+          onChange={handleChange}
+          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+          rows={4}
+          required
+        />
 
-          {error && <p className="text-red-400">{error}</p>}
+        <input
+          type="text"
+          name="company"
+          placeholder="Company Name"
+          value={form.company}
+          onChange={handleChange}
+          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+          required
+        />
 
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-md font-semibold transition w-full"
-          >
-            Post Job
-          </button>
-        </form>
-      </div>
+        <input
+          type="text"
+          name="location"
+          placeholder="Job Location"
+          value={form.location}
+          onChange={handleChange}
+          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+          required
+        />
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="w-full p-2 rounded bg-gray-800 border border-gray-700"
+        />
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+        >
+          Post Job
+        </button>
+
+        {message && <p className="text-center mt-2">{message}</p>}
+      </form>
     </div>
   );
 }

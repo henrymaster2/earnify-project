@@ -64,3 +64,4 @@ model JobApplication {
   @@unique([userId, jobId])
 }
 
+
