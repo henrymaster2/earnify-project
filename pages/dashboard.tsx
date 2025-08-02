@@ -31,6 +31,7 @@ export default function Dashboard({ id, name, coins }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 to-black text-white">
       
+      {/* Navbar */}
       <nav className="bg-blue-800 text-white py-4 shadow-md">
         <div className="px-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold">Earnify Dashboard</h1>
@@ -41,12 +42,12 @@ export default function Dashboard({ id, name, coins }: Props) {
         </div>
       </nav>
 
-      
-      <div className="text-center mt-20 px-4">
+      {/* Welcome & Balance */}
+      <div className="text-center mt-16 px-4">
         <h2 className="text-4xl font-bold mb-2">Welcome, {name}</h2>
         <p className="text-xl mb-6">Your Coin Balance: <span className="font-semibold">{coins}</span></p>
 
-        
+        {/* Action Buttons */}
         <div className="flex flex-col gap-4 items-center">
           <Link
             href="/jobs/search"
@@ -63,22 +64,22 @@ export default function Dashboard({ id, name, coins }: Props) {
           </Link>
 
           <Link
-            href="/games"
-            className="bg-purple-700 hover:bg-purple-600 px-8 py-3 rounded-xl font-semibold shadow-lg w-full max-w-xs text-center"
-          >
-            🎮 Play Games
-          </Link>
-
-          
-          <Link
             href="/ads"
             className="bg-indigo-600 hover:bg-indigo-500 px-8 py-3 rounded-xl font-semibold shadow-lg w-full max-w-xs text-center"
           >
             📺 Watch Ads and Earn
           </Link>
+
+          {/* 🎮 Play Games */}
+          <Link
+            href="/games"
+            className="bg-purple-700 hover:bg-purple-600 px-8 py-3 rounded-xl font-semibold shadow-lg w-full max-w-xs text-center animate-pulse"
+          >
+            🎮 Play Games & Earn
+          </Link>
         </div>
 
-    
+        {/* Referral Link */}
         <div className="mt-12 text-center px-4">
           <p className="text-lg mb-2">Your referral link:</p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-2">

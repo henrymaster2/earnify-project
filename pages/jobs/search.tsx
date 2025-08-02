@@ -1,5 +1,3 @@
-// pages/search.tsx
-
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -41,11 +39,16 @@ export default function JobSearchPage() {
 
   const fetchApplicationStatus = async () => {
     try {
-      const res = await axios.get('/api/jobs/status');
+      const userEmail = localStorage.getItem('userEmail') || 'test@example.com'; // ⬅️ Replace or set email on login
+      const res = await axios.post('/api/jobs/status', {
+        email: userEmail,
+      });
+
       const statusMap: ApplicationStatus = {};
       res.data.applications.forEach((app: any) => {
         statusMap[app.jobId] = true;
       });
+
       setApplicationStatus(statusMap);
     } catch (err) {
       console.error('Error fetching application status', err);

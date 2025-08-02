@@ -1,3 +1,5 @@
+// pages/api/jobs/status.ts
+
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 
@@ -7,29 +9,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { email, jobId } = req.body;
+    const { email } = req.body;
 
-    if (!email || !jobId) {
-      return res.status(400).json({ message: 'Missing email or jobId' });
+    if (!email) {
+      return res.status(400).json({ message: 'Missing email' });
     }
 
-    const existing = await prisma.jobApplication.findFirst({
+    const applications = await prisma.jobApplication.findMany({
       where: {
-        jobId: Number(jobId),
         user: {
           email: email,
         },
       },
-      include: {
-        user: true,
+      select: {
+        jobId: true,
       },
     });
 
-    if (!existing) {
-      return res.status(200).json({ status: 'Not Applied' });
-    }
-
-    return res.status(200).json({ status: existing.status });
+    return res.status(200).json({ applications });
   } catch (error) {
     console.error('Status check error:', error);
     return res.status(500).json({ message: 'Server Error' });
