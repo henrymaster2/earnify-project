@@ -8,71 +8,94 @@ datasource db {
 }
 
 model User {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   name       String
-  email      String    @unique
+  email      String   @unique
+  phone      String?  @unique // Optional unique phone number
   password   String
-  coins      Int       @default(0)
-  createdAt  DateTime  @default(now())
-  isAdmin    Boolean   @default(false)
+  coins      Int      @default(0)
+  createdAt  DateTime @default(now())
+  isAdmin    Boolean  @default(false)
+  profilePic String?  // Optional profile picture URL
 
-  // Referral system
+  // Referrals
   referrerId Int?
-  referrer   User?     @relation("Referrals", fields: [referrerId], references: [id])
-  referrals  User[]    @relation("Referrals")
+  referrer   User?    @relation("Referrals", fields: [referrerId], references: [id])
+  referrals  User[]   @relation("Referrals")
 
   // Relationships
   adWatches    AdWatch[]
   applications JobApplication[]
 
-  // Checkers game relationships
-  createdGames CheckersGame[] @relation("Player1")         // games the user created
-  joinedGames  CheckersGame[] @relation("Player2")         // games the user joined
-  wonGames     CheckersGame[] @relation("CheckersWinner")  // games the user won
+  // Game relations
+  createdGames CheckersGame[] @relation("CreatedGames")
+  joinedGames  CheckersGame[] @relation("JoinedGames")
+  wonGames     CheckersGame[] @relation("WonGames")
+
+  // Chat relations
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model AdWatch {
   id        Int      @id @default(autoincrement())
   userId    Int
   watchedAt DateTime @default(now())
-
   user      User     @relation(fields: [userId], references: [id])
 }
 
 model Job {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String
-  createdAt   DateTime  @default(now())
-
+  id           Int              @id @default(autoincrement())
+  title        String
+  description  String
+  createdAt    DateTime         @default(now())
   applications JobApplication[]
 }
 
 model JobApplication {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  jobId      Int
-  resumeUrl  String
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  jobId     Int
+  resumeUrl String
+  createdAt DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
-  job        Job      @relation(fields: [jobId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  job  Job  @relation(fields: [jobId], references: [id])
 }
 
 model CheckersGame {
-  id          Int      @id @default(autoincrement())
-  sessionCode String   @unique
-  player1Id   Int
-  player2Id   Int?
-  winnerId    Int?
-  wagerAmount Int
-  fee         Int      @default(0)
-  prize       Int      @default(0)
-  status      String   @default("waiting")
-  createdAt   DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  sessionCode  String   @unique
 
-  // Game relations
-  player1     User     @relation("Player1", fields: [player1Id], references: [id])
-  player2     User?    @relation("Player2", fields: [player2Id], references: [id])
-  winner      User?    @relation("CheckersWinner", fields: [winnerId], references: [id])
+  player1Id    Int
+  player2Id    Int?
+  winnerId     Int?
+
+  wagerAmount  Int
+  fee          Int      @default(0)
+  prize        Int      @default(0)
+
+  boardState   Json     @default("{}")         // Current board state as JSON
+  currentTurn  String   @default("player1")    // "player1" or "player2"
+  status       String   @default("waiting")    // "waiting" | "active" | "completed"
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Game player relations
+  player1 User  @relation("CreatedGames", fields: [player1Id], references: [id])
+  player2 User? @relation("JoinedGames", fields: [player2Id], references: [id])
+  winner  User? @relation("WonGames", fields: [winnerId], references: [id])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  content    String
+  type       String   // "text" | "image" | "video" | "audio" | "location"
+  createdAt  DateTime @default(now())
+
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
 }

@@ -1,58 +1,42 @@
-import { useEffect, useState } from 'react';
+import Link from "next/link";
+import { FaSearch, FaPlus, FaBriefcase, FaArrowLeft } from "react-icons/fa";
+import { useRouter } from "next/router";
 
-type Job = {
-  id: number;
-  title: string;
-  description: string;
-  company: string;
-  location: string;
-  createdAt: string;
-  imageBase64?: string | null;
-};
-
-export default function JobListPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-
-  useEffect(() => {
-    const fetchJobs = async () => {
-      const res = await fetch('/api/jobs');
-      const data = await res.json();
-      setJobs(data);
-    };
-    fetchJobs();
-  }, []);
+export default function JobsMenuPage() {
+  const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 to-black text-white py-10 px-4">
-      <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-blue-300 drop-shadow-lg">
-        🔍 Available Jobs
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-950 to-black text-white flex flex-col">
+      {/* Header */}
+      <header className="bg-blue-800 py-4 shadow-md flex items-center justify-between px-4">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex items-center gap-2 hover:text-blue-300 transition"
+        >
+          <FaArrowLeft size={18} /> Back
+        </button>
+        <h1 className="text-xl font-bold flex items-center gap-2">
+          <FaBriefcase /> Jobs
+        </h1>
+        <div className="w-6" /> {/* Spacer to balance header */}
+      </header>
 
-      <div className="max-w-4xl mx-auto grid gap-6 sm:grid-cols-1 md:grid-cols-2">
-        {jobs.map((job) => (
-          <div
-            key={job.id}
-            className="bg-blue-800/80 backdrop-blur-md p-5 rounded-2xl shadow-lg hover:shadow-xl transition duration-300 border border-blue-700"
-          >
-            <h2 className="text-xl font-bold text-white mb-2">{job.title}</h2>
-            <p className="text-sm text-blue-200 mb-1 font-semibold">🏢 {job.company}</p>
-            <p className="text-sm text-blue-200 mb-1">📍 {job.location}</p>
-            <p className="text-sm text-gray-300 mt-2 mb-3">{job.description}</p>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col items-center justify-center gap-8 px-4 py-10">
+        <Link
+          href="/jobs/search"
+          className="bg-blue-700 hover:bg-blue-600 px-8 py-4 rounded-xl font-semibold shadow-lg w-full max-w-xs text-center transition flex items-center justify-center gap-3"
+        >
+          <FaSearch size={20} /> View Available Jobs
+        </Link>
 
-            {job.imageBase64 && (
-              <img
-                src={job.imageBase64}
-                alt="Job image"
-                className="w-full max-h-48 object-cover rounded-lg mt-3 border border-blue-600"
-              />
-            )}
-
-            <p className="text-xs text-gray-400 mt-4">
-              🕒 Posted: {new Date(job.createdAt).toLocaleString()}
-            </p>
-          </div>
-        ))}
-      </div>
+        <Link
+          href="/jobs/post"
+          className="bg-green-700 hover:bg-green-600 px-8 py-4 rounded-xl font-semibold shadow-lg w-full max-w-xs text-center transition flex items-center justify-center gap-3"
+        >
+          <FaPlus size={20} /> Post a Job
+        </Link>
+      </main>
     </div>
   );
 }

@@ -10,6 +10,7 @@ export default function Signup() {
   const [form, setForm] = useState({
     name: "",
     email: "",
+    phone: "",
     password: "",
   });
 
@@ -23,6 +24,14 @@ export default function Signup() {
     }
   }, [router.query]);
 
+  const validateName = (name: string) => /^[A-Za-z\s]+$/.test(name);
+  const validateEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone: string) =>
+    /^\+?[0-9]{7,15}$/.test(phone); // Allows international format
+  const validatePassword = (password: string) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/.test(password);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -31,6 +40,23 @@ export default function Signup() {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    const { name, email, phone, password } = form;
+
+    if (!validateName(name)) {
+      return setError("Name must only contain letters and spaces.");
+    }
+    if (!validateEmail(email)) {
+      return setError("Please enter a valid email address.");
+    }
+    if (!validatePhone(phone)) {
+      return setError("Please enter a valid phone number.");
+    }
+    if (!validatePassword(password)) {
+      return setError(
+        "Password must contain at least 8 characters, including uppercase, lowercase, number, and special character."
+      );
+    }
 
     try {
       const res = await axios.post("/api/signup", {
@@ -66,6 +92,15 @@ export default function Signup() {
             name="email"
             placeholder="Email"
             value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full px-4 py-2 bg-white/10 text-white rounded-md placeholder-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <input
+            type="tel"
+            name="phone"
+            placeholder="Phone (+123456789)"
+            value={form.phone}
             onChange={handleChange}
             required
             className="w-full px-4 py-2 bg-white/10 text-white rounded-md placeholder-white border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-400"
